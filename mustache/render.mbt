@@ -1,11 +1,11 @@
-fn apply_indent(content : String, indent : String) -> String {
+fn apply_indent(content : String, indent : String, standalone : Bool) -> String {
   if indent.length() == 0 {
     return content
   }
   let sb = StringBuilder::new()
   let len = content.length()
   let mut i = 0
-  let mut at_line_start = true
+  let mut at_line_start = standalone
   let char_lf = (10).to_uint16()
   while i < len {
     let c = content[i]
@@ -78,7 +78,7 @@ fn render_nodes(
           }
         }
       }
-      Partial(name, indent~) => {
+      Partial(name, indent~, standalone~) => {
         match partials.get(name) {
           None => ()
           Some(partial_template) => {
@@ -90,7 +90,7 @@ fn render_nodes(
             render_nodes(partial_nodes, context, partials, partial_sb)
             
             let rendered_partial = partial_sb.to_string()
-            let indented_partial = apply_indent(rendered_partial, indent)
+            let indented_partial = apply_indent(rendered_partial, indent, standalone)
             sb.write_string(indented_partial)
           }
         }

@@ -5,7 +5,7 @@ enum Token {
   TInvertedSectionStart(String)
   TSectionEnd(String)
   TComment(String)
-  TPartial(String, indent~ : String)
+  TPartial(String, indent~ : String, standalone~ : Bool)
 } derive(Debug, Eq)
 
 fn find_substring(s : String, sub : String, start : Int) -> Int {
@@ -230,14 +230,15 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
       let mut indent = ""
       if is_standalone {
         indent = template[pre_text_end:next_open].to_owned()
+        tokens.push(Token::TPartial(name, indent = indent, standalone = true))
       } else {
         let mut p = next_open - 1
         while p >= 0 && (template[p] == char_space || template[p] == char_tab) {
           p = p - 1
         }
         indent = template[p + 1:next_open].to_owned()
+        tokens.push(Token::TPartial(name, indent = indent, standalone = false))
       }
-      tokens.push(Token::TPartial(name, indent = indent))
     } else if first_char == char_eq {
       let len_content = content.length()
       if len_content < 3 || content[len_content - 1] != char_eq {

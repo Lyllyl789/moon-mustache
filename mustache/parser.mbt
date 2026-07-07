@@ -33,7 +33,7 @@ fn Parser::parse(self : Parser) -> Array[Node] raise MustacheError {
           TText(text) => nodes.push(Node::Text(text))
           TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
+          TPartial(name, indent~, standalone~) => nodes.push(Node::Partial(name, indent = indent, standalone = standalone))
           TSectionStart(name) => {
             let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = false))
@@ -70,7 +70,7 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] ra
           TText(text) => nodes.push(Node::Text(text))
           TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
+          TPartial(name, indent~, standalone~) => nodes.push(Node::Partial(name, indent = indent, standalone = standalone))
           TSectionStart(name) => {
             let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = false))
@@ -79,7 +79,7 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] ra
             let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = true))
           }
-          TSectionEnd(_) => () // Unreachable due to peek check, but required for exhaustiveness
+          TSectionEnd(_) => ()
         }
       }
     }
