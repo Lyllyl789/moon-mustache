@@ -1,4 +1,4 @@
-struct Parser {
+priv struct Parser {
   tokens : Array[Token]
   mut index : Int
 }
@@ -19,7 +19,7 @@ fn Parser::advance(self : Parser) -> Unit {
   self.index = self.index + 1
 }
 
-fn Parser::parse(self : Parser) -> Array[Node]!MustacheError {
+fn Parser::parse(self : Parser) -> Array[Node] raise MustacheError {
   let nodes = []
   while true {
     match self.peek() {
@@ -35,11 +35,11 @@ fn Parser::parse(self : Parser) -> Array[Node]!MustacheError {
           TComment(_) => ()
           TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
           TSectionStart(name) => {
-            let children = self.parse_section(name)!
+            let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
-            let children = self.parse_section(name)!
+            let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = true))
           }
           TSectionEnd(_) => ()
@@ -50,7 +50,7 @@ fn Parser::parse(self : Parser) -> Array[Node]!MustacheError {
   nodes
 }
 
-fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node]!MustacheError {
+fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] raise MustacheError {
   let nodes = []
   while true {
     match self.peek() {
@@ -72,13 +72,14 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node]!Mu
           TComment(_) => ()
           TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
           TSectionStart(name) => {
-            let children = self.parse_section(name)!
+            let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
-            let children = self.parse_section(name)!
+            let children = self.parse_section(name)
             nodes.push(Node::Section(name, children, inverted = true))
           }
+          TSectionEnd(_) => () // Unreachable due to peek check, but required for exhaustiveness
         }
       }
     }

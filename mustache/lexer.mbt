@@ -6,7 +6,7 @@ enum Token {
   TSectionEnd(String)
   TComment(String)
   TPartial(String, indent~ : String)
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 fn find_substring(s : String, sub : String, start : Int) -> Int {
   let len = s.length()
@@ -33,8 +33,8 @@ fn find_substring(s : String, sub : String, start : Int) -> Int {
   -1
 }
 
-fn is_whitespace(c : Char) -> Bool {
-  c == ' ' || c == '\t' || c == '\r' || c == '\n'
+fn is_whitespace(c : UInt16) -> Bool {
+  c == (32).to_uint16() || c == (9).to_uint16() || c == (13).to_uint16() || c == (10).to_uint16()
 }
 
 fn trim_whitespace(s : String) -> String {
@@ -47,7 +47,7 @@ fn trim_whitespace(s : String) -> String {
   while end > start && is_whitespace(s[end - 1]) {
     end = end - 1
   }
-  s.substring(start~, end~)
+  s[start:end].to_owned()
 }
 
 fn split_whitespace(s : String) -> Array[String] {
@@ -60,11 +60,11 @@ fn split_whitespace(s : String) -> Array[String] {
     let c = s[i]
     if is_whitespace(c) {
       if in_word {
-        res.push(s.substring(start~, end~ = i))
+        res.push(s[start:i].to_owned())
         in_word = false
       }
     } else {
-      if not(in_word) {
+      if !in_word {
         start = i
         in_word = true
       }
@@ -72,7 +72,7 @@ fn split_whitespace(s : String) -> Array[String] {
     i = i + 1
   }
   if in_word {
-    res.push(s.substring(start~, end~ = len))
+    res.push(s[start:len].to_owned())
   }
   res
 }
@@ -87,18 +87,22 @@ fn check_standalone(
   // Look backward
   let mut p = tag_start - 1
   let mut only_ws_before = true
+  let char_lf = (10).to_uint16()
+  let char_space = (32).to_uint16()
+  let char_tab = (9).to_uint16()
+  let char_cr = (13).to_uint16()
   while p >= 0 {
     let c = template[p]
-    if c == '\n' {
+    if c == char_lf {
       break
     }
-    if c != ' ' && c != '\t' && c != '\r' {
+    if c != char_space && c != char_tab && c != char_cr {
       only_ws_before = false
       break
     }
     p = p - 1
   }
-  if not(only_ws_before) {
+  if !only_ws_before {
     return (false, 0, 0)
   }
   let pre_ws_start = p + 1
@@ -110,18 +114,18 @@ fn check_standalone(
   let mut newline_end = len
   while q < len {
     let c = template[q]
-    if c == '\n' {
+    if c == char_lf {
       found_newline = true
       newline_end = q + 1
       break
     }
-    if c != ' ' && c != '\t' && c != '\r' {
+    if c != char_space && c != char_tab && c != char_cr {
       only_ws_after = false
       break
     }
     q = q + 1
   }
-  if not(only_ws_after) {
+  if !only_ws_after {
     return (false, 0, 0)
   }
   
@@ -129,17 +133,28 @@ fn check_standalone(
   (true, pre_ws_start, post_ws_end)
 }
 
-fn tokenize(template : String) -> Array[Token]!MustacheError {
+fn tokenize(template : String) -> Array[Token] raise MustacheError {
   let tokens = []
   let mut pos = 0
   let mut open_delim = "{{"
   let mut close_delim = "}}"
   let len = template.length()
 
+  let char_lbrace = (123).to_uint16()
+  let char_excl = (33).to_uint16()
+  let char_hash = (35).to_uint16()
+  let char_caret = (94).to_uint16()
+  let char_slash = (47).to_uint16()
+  let char_gt = (62).to_uint16()
+  let char_eq = (61).to_uint16()
+  let char_amp = (38).to_uint16()
+  let char_space = (32).to_uint16()
+  let char_tab = (9).to_uint16()
+
   while pos < len {
     let next_open = find_substring(template, open_delim, pos)
     if next_open == -1 {
-      let text = template.substring(start~ = pos, end~ = len)
+      let text = template[pos:len].to_owned()
       if text.length() > 0 {
         tokens.push(Token::TText(text))
       }
@@ -154,7 +169,7 @@ fn tokenize(template : String) -> Array[Token]!MustacheError {
     let mut actual_close = close_delim
     let mut tag_content_start = next_open + open_delim.length()
 
-    if open_delim == "{{" && tag_content_start < len && template[tag_content_start] == '{' {
+    if open_delim == "{{" && tag_content_start < len && template[tag_content_start] == char_lbrace {
       is_triple = true
       actual_close = "}}}"
       tag_content_start = tag_content_start + 1
@@ -166,7 +181,7 @@ fn tokenize(template : String) -> Array[Token]!MustacheError {
     }
 
     let tag_end = next_close + actual_close.length()
-    let raw_content = template.substring(start~ = tag_content_start, end~ = next_close)
+    let raw_content = template[tag_content_start:next_close].to_owned()
     let content = trim_whitespace(raw_content)
 
     if content.length() == 0 {
@@ -175,7 +190,7 @@ fn tokenize(template : String) -> Array[Token]!MustacheError {
 
     let first_char = content[0]
     let is_standalone_candidate = match first_char {
-      '!' | '#' | '^' | '/' | '>' | '=' => true
+      _ if first_char == char_excl || first_char == char_hash || first_char == char_caret || first_char == char_slash || first_char == char_gt || first_char == char_eq => true
       _ => false
     }
 
@@ -193,65 +208,56 @@ fn tokenize(template : String) -> Array[Token]!MustacheError {
 
     // Push preceding text if there is any
     if pre_text_end > pos {
-      let text = template.substring(start~ = pos, end~ = pre_text_end)
+      let text = template[pos:pre_text_end].to_owned()
       tokens.push(Token::TText(text))
     }
 
     // Add token
-    match first_char {
-      '!' => {
-        let comment_text = content.substring(start~ = 1, end~ = content.length())
-        tokens.push(Token::TComment(comment_text))
-      }
-      '#' => {
-        let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        tokens.push(Token::TSectionStart(name))
-      }
-      '^' => {
-        let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        tokens.push(Token::TInvertedSectionStart(name))
-      }
-      '/' => {
-        let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        tokens.push(Token::TSectionEnd(name))
-      }
-      '>' => {
-        let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        let mut indent = ""
-        if is_standalone {
-          indent = template.substring(start~ = pre_text_end, end~ = next_open)
-        } else {
-          let mut p = next_open - 1
-          while p >= 0 && (template[p] == ' ' || template[p] == '\t') {
-            p = p - 1
-          }
-          indent = template.substring(start~ = p + 1, end~ = next_open)
+    if first_char == char_excl {
+      let comment_text = content[1:content.length()].to_owned()
+      tokens.push(Token::TComment(comment_text))
+    } else if first_char == char_hash {
+      let name = trim_whitespace(content[1:content.length()].to_owned())
+      tokens.push(Token::TSectionStart(name))
+    } else if first_char == char_caret {
+      let name = trim_whitespace(content[1:content.length()].to_owned())
+      tokens.push(Token::TInvertedSectionStart(name))
+    } else if first_char == char_slash {
+      let name = trim_whitespace(content[1:content.length()].to_owned())
+      tokens.push(Token::TSectionEnd(name))
+    } else if first_char == char_gt {
+      let name = trim_whitespace(content[1:content.length()].to_owned())
+      let mut indent = ""
+      if is_standalone {
+        indent = template[pre_text_end:next_open].to_owned()
+      } else {
+        let mut p = next_open - 1
+        while p >= 0 && (template[p] == char_space || template[p] == char_tab) {
+          p = p - 1
         }
-        tokens.push(Token::TPartial(name, indent = indent))
+        indent = template[p + 1:next_open].to_owned()
       }
-      '=' => {
-        let len_content = content.length()
-        if len_content < 3 || content[len_content - 1] != '=' {
-          raise ParseError("Invalid delimiter change tag: \{content}")
-        }
-        let delims_str = trim_whitespace(content.substring(start~ = 1, end~ = len_content - 1))
-        let parts = split_whitespace(delims_str)
-        if parts.length() != 2 {
-          raise ParseError("Invalid delimiter specification: \{delims_str}")
-        }
-        open_delim = parts[0]
-        close_delim = parts[1]
+      tokens.push(Token::TPartial(name, indent = indent))
+    } else if first_char == char_eq {
+      let len_content = content.length()
+      if len_content < 3 || content[len_content - 1] != char_eq {
+        raise ParseError("Invalid delimiter change tag: \{content}")
       }
-      '&' => {
-        let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        tokens.push(Token::TVariable(name, escape = false))
+      let delims_str = trim_whitespace(content[1:len_content - 1].to_owned())
+      let parts = split_whitespace(delims_str)
+      if parts.length() != 2 {
+        raise ParseError("Invalid delimiter specification: \{delims_str}")
       }
-      _ => {
-        if is_triple {
-          tokens.push(Token::TVariable(content, escape = false))
-        } else {
-          tokens.push(Token::TVariable(content, escape = true))
-        }
+      open_delim = parts[0]
+      close_delim = parts[1]
+    } else if first_char == char_amp {
+      let name = trim_whitespace(content[1:content.length()].to_owned())
+      tokens.push(Token::TVariable(name, escape = false))
+    } else {
+      if is_triple {
+        tokens.push(Token::TVariable(content, escape = false))
+      } else {
+        tokens.push(Token::TVariable(content, escape = true))
       }
     }
 
