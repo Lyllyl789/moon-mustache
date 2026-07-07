@@ -1,0 +1,17 @@
+{
+  "name": "luyilu/mustache",
+  "version": "0.1.0",
+  "deps": {
+    "moonbitlang/core": "0.1.0"
+  },
+  "readme": "README.md",
+  "repository": "https://github.com/luyilu/mustache",
+  "license": "MIT",
+  "keywords": [
+    "mustache",
+    "template",
+    "html",
+    "wasm"
+  ],
+  "description": "A spec-compliant Mustache template engine in pure MoonBit."
+}

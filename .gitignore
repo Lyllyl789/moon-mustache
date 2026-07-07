@@ -1,0 +1,8 @@
+# MoonBit build outputs
+/target/
+.moon/
+.mooncakes/
+
+# OS metadata
+.DS_Store
+Thumbs.db
