@@ -15,52 +15,52 @@ fn Parser::peek(self : Parser) -> Option[Token] {
   }
 }
 
-fn Parser::advance(self : Parser) {
+fn Parser::advance(self : Parser) -> Unit {
   self.index = self.index + 1
 }
 
-fn Parser::parse(self : Parser) -> Result[Array[Node], MustacheError] {
+fn Parser::parse(self : Parser) -> Array[Node]!MustacheError {
   let nodes = []
   while true {
     match self.peek() {
       None => break
       Some(Token::TSectionEnd(name)) => {
-        return Result::Err(MustacheError::ParseError("Unexpected section end tag: /\{name}"))
+        raise ParseError("Unexpected section end tag: /\{name}")
       }
       Some(tok) => {
         self.advance()
         match tok {
           TText(text) => nodes.push(Node::Text(text))
-          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape~ = escape))
+          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent~ = indent))
+          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
           TSectionStart(name) => {
-            let children = self.parse_section(name)?
-            nodes.push(Node::Section(name, children, inverted~ = false))
+            let children = self.parse_section(name)!
+            nodes.push(Node::Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
-            let children = self.parse_section(name)?
-            nodes.push(Node::Section(name, children, inverted~ = true))
+            let children = self.parse_section(name)!
+            nodes.push(Node::Section(name, children, inverted = true))
           }
           TSectionEnd(_) => ()
         }
       }
     }
   }
-  Result::Ok(nodes)
+  nodes
 }
 
-fn Parser::parse_section(self : Parser, section_name : String) -> Result[Array[Node], MustacheError] {
+fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node]!MustacheError {
   let nodes = []
   while true {
     match self.peek() {
       None => {
-        return Result::Err(MustacheError::ParseError("Unclosed section: \{section_name}"))
+        raise ParseError("Unclosed section: \{section_name}")
       }
       Some(Token::TSectionEnd(end_name)) => {
         self.advance()
         if end_name != section_name {
-          return Result::Err(MustacheError::ParseError("Mismatched section end tag: expected /\{section_name}, got /\{end_name}"))
+          raise ParseError("Mismatched section end tag: expected /\{section_name}, got /\{end_name}")
         }
         break
       }
@@ -68,20 +68,20 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Result[Array[N
         self.advance()
         match tok {
           TText(text) => nodes.push(Node::Text(text))
-          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape~ = escape))
+          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent~ = indent))
+          TPartial(name, indent~) => nodes.push(Node::Partial(name, indent = indent))
           TSectionStart(name) => {
-            let children = self.parse_section(name)?
-            nodes.push(Node::Section(name, children, inverted~ = false))
+            let children = self.parse_section(name)!
+            nodes.push(Node::Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
-            let children = self.parse_section(name)?
-            nodes.push(Node::Section(name, children, inverted~ = true))
+            let children = self.parse_section(name)!
+            nodes.push(Node::Section(name, children, inverted = true))
           }
         }
       }
     }
   }
-  Result::Ok(nodes)
+  nodes
 }

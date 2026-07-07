@@ -129,7 +129,7 @@ fn check_standalone(
   (true, pre_ws_start, post_ws_end)
 }
 
-fn tokenize(template : String) -> Result[Array[Token], MustacheError] {
+fn tokenize(template : String) -> Array[Token]!MustacheError {
   let tokens = []
   let mut pos = 0
   let mut open_delim = "{{"
@@ -162,7 +162,7 @@ fn tokenize(template : String) -> Result[Array[Token], MustacheError] {
 
     let next_close = find_substring(template, actual_close, tag_content_start)
     if next_close == -1 {
-      return Result::Err(MustacheError::ParseError("Unclosed tag starting at position \{next_open}"))
+      raise ParseError("Unclosed tag starting at position \{next_open}")
     }
 
     let tag_end = next_close + actual_close.length()
@@ -170,7 +170,7 @@ fn tokenize(template : String) -> Result[Array[Token], MustacheError] {
     let content = trim_whitespace(raw_content)
 
     if content.length() == 0 {
-      return Result::Err(MustacheError::ParseError("Empty tag at position \{next_open}"))
+      raise ParseError("Empty tag at position \{next_open}")
     }
 
     let first_char = content[0]
@@ -219,40 +219,38 @@ fn tokenize(template : String) -> Result[Array[Token], MustacheError] {
         let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
         let mut indent = ""
         if is_standalone {
-          // Indent is the whitespace between pre_text_end and next_open
           indent = template.substring(start~ = pre_text_end, end~ = next_open)
         } else {
-          // Find preceding whitespace on the same line
           let mut p = next_open - 1
           while p >= 0 && (template[p] == ' ' || template[p] == '\t') {
             p = p - 1
           }
           indent = template.substring(start~ = p + 1, end~ = next_open)
         }
-        tokens.push(Token::TPartial(name, indent~ = indent))
+        tokens.push(Token::TPartial(name, indent = indent))
       }
       '=' => {
         let len_content = content.length()
         if len_content < 3 || content[len_content - 1] != '=' {
-          return Result::Err(MustacheError::ParseError("Invalid delimiter change tag: \{content}"))
+          raise ParseError("Invalid delimiter change tag: \{content}")
         }
         let delims_str = trim_whitespace(content.substring(start~ = 1, end~ = len_content - 1))
         let parts = split_whitespace(delims_str)
         if parts.length() != 2 {
-          return Result::Err(MustacheError::ParseError("Invalid delimiter specification: \{delims_str}"))
+          raise ParseError("Invalid delimiter specification: \{delims_str}")
         }
         open_delim = parts[0]
         close_delim = parts[1]
       }
       '&' => {
         let name = trim_whitespace(content.substring(start~ = 1, end~ = content.length()))
-        tokens.push(Token::TVariable(name, escape~ = false))
+        tokens.push(Token::TVariable(name, escape = false))
       }
       _ => {
         if is_triple {
-          tokens.push(Token::TVariable(content, escape~ = false))
+          tokens.push(Token::TVariable(content, escape = false))
         } else {
-          tokens.push(Token::TVariable(content, escape~ = true))
+          tokens.push(Token::TVariable(content, escape = true))
         }
       }
     }
@@ -260,5 +258,5 @@ fn tokenize(template : String) -> Result[Array[Token], MustacheError] {
     pos = post_ws_end
   }
 
-  Result::Ok(tokens)
+  tokens
 }

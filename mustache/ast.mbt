@@ -5,14 +5,7 @@ pub(all) enum Node {
   Partial(String, indent~ : String)
 } derive(Show, Eq)
 
-pub(all) enum MustacheError {
+pub(all) suberror MustacheError {
   ParseError(String)
   RenderError(String)
-} derive(Show, Eq)
-
-impl Show for MustacheError with output(self, logger) {
-  match self {
-    ParseError(msg) => logger.write_string("ParseError: \{msg}")
-    RenderError(msg) => logger.write_string("RenderError: \{msg}")
-  }
 }
