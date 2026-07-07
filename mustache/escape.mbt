@@ -21,7 +21,7 @@ pub fn escape_html(s : String) -> String {
     } else if c == char_apos {
       sb.write_string("&#39;")
     } else {
-      let ch = c.to_int().to_char()
+      let ch = c.to_int().to_char().unwrap()
       sb.write_char(ch)
     }
     i = i + 1
