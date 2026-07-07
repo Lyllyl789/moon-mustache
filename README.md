@@ -7,7 +7,7 @@
 ## 项目信息
 
 - **项目名称**：`moon-mustache` (Mustache 模板引擎)
-- **项目标识 (Module)**：`luyilu/mustache`
+- **项目标识 (Module)**：`Lyllyl789/mustache`
 - **项目简介**：基于 MoonBit 强类型与高性能特征实现的 Mustache 规范模板引擎。支持变量插值、嵌套列表/条件区块、取反区块、局部模板（支持缩进保留）、自定义分界符等完整特性，为 MoonBit 生态补齐高复用性的动态渲染工具。
 
 ## 特性列表
@@ -32,7 +32,7 @@
 ```json
 {
   "import": [
-    "luyilu/mustache/mustache"
+    "Lyllyl789/mustache/mustache"
   ]
 }
 ```
