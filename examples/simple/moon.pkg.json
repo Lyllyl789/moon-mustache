@@ -1,0 +1,6 @@
+{
+  "import": [
+    "luyilu/mustache/mustache"
+  ],
+  "is-main": true
+}
