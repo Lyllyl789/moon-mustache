@@ -209,35 +209,35 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
     // Push preceding text if there is any
     if pre_text_end > pos {
       let text = template[pos:pre_text_end].to_owned()
-      tokens.push(Token::TText(text))
+      tokens.push(TText(text))
     }
 
     // Add token
     if first_char == char_excl {
       let comment_text = content[1:content.length()].to_owned()
-      tokens.push(Token::TComment(comment_text))
+      tokens.push(TComment(comment_text))
     } else if first_char == char_hash {
       let name = trim_whitespace(content[1:content.length()].to_owned())
-      tokens.push(Token::TSectionStart(name))
+      tokens.push(TSectionStart(name))
     } else if first_char == char_caret {
       let name = trim_whitespace(content[1:content.length()].to_owned())
-      tokens.push(Token::TInvertedSectionStart(name))
+      tokens.push(TInvertedSectionStart(name))
     } else if first_char == char_slash {
       let name = trim_whitespace(content[1:content.length()].to_owned())
-      tokens.push(Token::TSectionEnd(name))
+      tokens.push(TSectionEnd(name))
     } else if first_char == char_gt {
       let name = trim_whitespace(content[1:content.length()].to_owned())
       let mut indent = ""
       if is_standalone {
         indent = template[pre_text_end:next_open].to_owned()
-        tokens.push(Token::TPartial(name, indent = indent, standalone = true))
+        tokens.push(TPartial(name, indent = indent, standalone = true))
       } else {
         let mut p = next_open - 1
         while p >= 0 && (template[p] == char_space || template[p] == char_tab) {
           p = p - 1
         }
         indent = template[p + 1:next_open].to_owned()
-        tokens.push(Token::TPartial(name, indent = indent, standalone = false))
+        tokens.push(TPartial(name, indent = indent, standalone = false))
       }
     } else if first_char == char_eq {
       let len_content = content.length()
@@ -253,14 +253,15 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
       close_delim = parts[1]
     } else if first_char == char_amp {
       let name = trim_whitespace(content[1:content.length()].to_owned())
-      tokens.push(Token::TVariable(name, escape = false))
+      tokens.push(TVariable(name, escape = false))
     } else {
       if is_triple {
-        tokens.push(Token::TVariable(content, escape = false))
+        tokens.push(TVariable(content, escape = false))
       } else {
-        tokens.push(Token::TVariable(content, escape = true))
+        tokens.push(TVariable(content, escape = true))
       }
     }
+
 
     pos = post_ws_end
   }

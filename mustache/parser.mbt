@@ -24,23 +24,23 @@ fn Parser::parse(self : Parser) -> Array[Node] raise MustacheError {
   while true {
     match self.peek() {
       None => break
-      Some(Token::TSectionEnd(name)) => {
+      Some(TSectionEnd(name)) => {
         raise ParseError("Unexpected section end tag: /\{name}")
       }
       Some(tok) => {
         self.advance()
         match tok {
-          TText(text) => nodes.push(Node::Text(text))
-          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
+          TText(text) => nodes.push(Text(text))
+          TVariable(name, escape~) => nodes.push(Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~, standalone~) => nodes.push(Node::Partial(name, indent = indent, standalone = standalone))
+          TPartial(name, indent~, standalone~) => nodes.push(Partial(name, indent = indent, standalone = standalone))
           TSectionStart(name) => {
             let children = self.parse_section(name)
-            nodes.push(Node::Section(name, children, inverted = false))
+            nodes.push(Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
             let children = self.parse_section(name)
-            nodes.push(Node::Section(name, children, inverted = true))
+            nodes.push(Section(name, children, inverted = true))
           }
           TSectionEnd(_) => ()
         }
@@ -57,7 +57,7 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] ra
       None => {
         raise ParseError("Unclosed section: \{section_name}")
       }
-      Some(Token::TSectionEnd(end_name)) => {
+      Some(TSectionEnd(end_name)) => {
         self.advance()
         if end_name != section_name {
           raise ParseError("Mismatched section end tag: expected /\{section_name}, got /\{end_name}")
@@ -67,17 +67,17 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] ra
       Some(tok) => {
         self.advance()
         match tok {
-          TText(text) => nodes.push(Node::Text(text))
-          TVariable(name, escape~) => nodes.push(Node::Variable(name, escape = escape))
+          TText(text) => nodes.push(Text(text))
+          TVariable(name, escape~) => nodes.push(Variable(name, escape = escape))
           TComment(_) => ()
-          TPartial(name, indent~, standalone~) => nodes.push(Node::Partial(name, indent = indent, standalone = standalone))
+          TPartial(name, indent~, standalone~) => nodes.push(Partial(name, indent = indent, standalone = standalone))
           TSectionStart(name) => {
             let children = self.parse_section(name)
-            nodes.push(Node::Section(name, children, inverted = false))
+            nodes.push(Section(name, children, inverted = false))
           }
           TInvertedSectionStart(name) => {
             let children = self.parse_section(name)
-            nodes.push(Node::Section(name, children, inverted = true))
+            nodes.push(Section(name, children, inverted = true))
           }
           TSectionEnd(_) => ()
         }
@@ -86,3 +86,4 @@ fn Parser::parse_section(self : Parser, section_name : String) -> Array[Node] ra
   }
   nodes
 }
+

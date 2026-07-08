@@ -4,12 +4,13 @@ pub(all) enum Context {
 }
 
 pub fn Context::new(data : Json) -> Context {
-  Context::Frame(data, Empty)
+  Frame(data, Empty)
 }
 
 pub fn Context::push(self : Context, val : Json) -> Context {
-  Context::Frame(val, self)
+  Frame(val, self)
 }
+
 
 fn has_dot(s : String) -> Bool {
   let len = s.length()
