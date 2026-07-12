@@ -1,3 +1,4 @@
+///|
 pub(all) enum Node {
   Text(String)
   Variable(String, escape~ : Bool)
@@ -5,12 +6,14 @@ pub(all) enum Node {
   Partial(String, indent~ : String, standalone~ : Bool)
 } derive(Debug, Eq)
 
+///|
 pub(all) suberror MustacheError {
   ParseError(String)
   RenderError(String)
 }
 
-impl Show for MustacheError with output(self, logger) {
+///|
+impl Show for MustacheError with fn output(self, logger) {
   match self {
     ParseError(msg) => logger.write_string("ParseError: \{msg}")
     RenderError(msg) => logger.write_string("RenderError: \{msg}")

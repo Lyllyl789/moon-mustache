@@ -1,3 +1,4 @@
+///|
 pub fn escape_html(s : String) -> String {
   let sb = StringBuilder::new()
   let len = s.length()

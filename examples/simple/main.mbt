@@ -1,3 +1,4 @@
+///|
 fn main {
   let template =
     $|Hello {{name}}!
@@ -9,7 +10,7 @@ fn main {
   let context : Json = {
     "name": "Lu Yilu",
     "location": "Beijing, China",
-    "skills": ["MoonBit", "WebAssembly", "Mustache"]
+    "skills": ["MoonBit", "WebAssembly", "Mustache"],
   }
 
   try {

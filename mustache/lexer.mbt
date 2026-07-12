@@ -1,3 +1,4 @@
+///|
 enum Token {
   TText(String)
   TVariable(String, escape~ : Bool)
@@ -8,6 +9,7 @@ enum Token {
   TPartial(String, indent~ : String, standalone~ : Bool)
 } derive(Debug, Eq)
 
+///|
 fn find_substring(s : String, sub : String, start : Int) -> Int {
   let len = s.length()
   let sub_len = sub.length()
@@ -33,10 +35,15 @@ fn find_substring(s : String, sub : String, start : Int) -> Int {
   -1
 }
 
+///|
 fn is_whitespace(c : UInt16) -> Bool {
-  c == (32).to_uint16() || c == (9).to_uint16() || c == (13).to_uint16() || c == (10).to_uint16()
+  c == (32).to_uint16() ||
+  c == (9).to_uint16() ||
+  c == (13).to_uint16() ||
+  c == (10).to_uint16()
 }
 
+///|
 fn trim_whitespace(s : String) -> String {
   let len = s.length()
   let mut start = 0
@@ -50,6 +57,7 @@ fn trim_whitespace(s : String) -> String {
   s[start:end].to_owned()
 }
 
+///|
 fn split_whitespace(s : String) -> Array[String] {
   let res = []
   let len = s.length()
@@ -63,11 +71,9 @@ fn split_whitespace(s : String) -> Array[String] {
         res.push(s[start:i].to_owned())
         in_word = false
       }
-    } else {
-      if !in_word {
-        start = i
-        in_word = true
-      }
+    } else if !in_word {
+      start = i
+      in_word = true
     }
     i = i + 1
   }
@@ -77,13 +83,14 @@ fn split_whitespace(s : String) -> Array[String] {
   res
 }
 
+///|
 fn check_standalone(
   template : String,
   tag_start : Int,
-  tag_end : Int
+  tag_end : Int,
 ) -> (Bool, Int, Int) {
   let len = template.length()
-  
+
   // Look backward
   let mut p = tag_start - 1
   let mut only_ws_before = true
@@ -128,11 +135,12 @@ fn check_standalone(
   if !only_ws_after {
     return (false, 0, 0)
   }
-  
+
   let post_ws_end = if found_newline { newline_end } else { q }
   (true, pre_ws_start, post_ws_end)
 }
 
+///|
 fn tokenize(template : String) -> Array[Token] raise MustacheError {
   let tokens = []
   let mut pos = 0
@@ -169,7 +177,9 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
     let mut actual_close = close_delim
     let mut tag_content_start = next_open + open_delim.length()
 
-    if open_delim == "{{" && tag_content_start < len && template[tag_content_start] == char_lbrace {
+    if open_delim == "{{" &&
+      tag_content_start < len &&
+      template[tag_content_start] == char_lbrace {
       is_triple = true
       actual_close = "}}}"
       tag_content_start = tag_content_start + 1
@@ -190,7 +200,12 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
 
     let first_char = content[0]
     let is_standalone_candidate = match first_char {
-      _ if first_char == char_excl || first_char == char_hash || first_char == char_caret || first_char == char_slash || first_char == char_gt || first_char == char_eq => true
+      _ if first_char == char_excl ||
+        first_char == char_hash ||
+        first_char == char_caret ||
+        first_char == char_slash ||
+        first_char == char_gt ||
+        first_char == char_eq => true
       _ => false
     }
 
@@ -198,7 +213,9 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
     let mut post_ws_end = tag_end
 
     if is_standalone_candidate {
-      let (standalone, pre_ws_start, post_end) = check_standalone(template, next_open, tag_end)
+      let (standalone, pre_ws_start, post_end) = check_standalone(
+        template, next_open, tag_end,
+      )
       if standalone {
         is_standalone = true
         pre_text_end = pre_ws_start
@@ -230,14 +247,14 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
       let mut indent = ""
       if is_standalone {
         indent = template[pre_text_end:next_open].to_owned()
-        tokens.push(TPartial(name, indent = indent, standalone = true))
+        tokens.push(TPartial(name, indent~, standalone=true))
       } else {
         let mut p = next_open - 1
         while p >= 0 && (template[p] == char_space || template[p] == char_tab) {
           p = p - 1
         }
         indent = template[p + 1:next_open].to_owned()
-        tokens.push(TPartial(name, indent = indent, standalone = false))
+        tokens.push(TPartial(name, indent~, standalone=false))
       }
     } else if first_char == char_eq {
       let len_content = content.length()
@@ -253,15 +270,12 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
       close_delim = parts[1]
     } else if first_char == char_amp {
       let name = trim_whitespace(content[1:content.length()].to_owned())
-      tokens.push(TVariable(name, escape = false))
+      tokens.push(TVariable(name, escape=false))
+    } else if is_triple {
+      tokens.push(TVariable(content, escape=false))
     } else {
-      if is_triple {
-        tokens.push(TVariable(content, escape = false))
-      } else {
-        tokens.push(TVariable(content, escape = true))
-      }
+      tokens.push(TVariable(content, escape=true))
     }
-
 
     pos = post_ws_end
   }

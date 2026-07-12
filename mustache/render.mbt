@@ -1,3 +1,4 @@
+///|
 fn apply_indent(content : String, indent : String, standalone : Bool) -> String {
   if indent.length() == 0 {
     return content
@@ -22,6 +23,7 @@ fn apply_indent(content : String, indent : String, standalone : Bool) -> String 
   sb.to_string()
 }
 
+///|
 fn json_to_string(val : Json) -> String {
   match val {
     Null => ""
@@ -33,11 +35,12 @@ fn json_to_string(val : Json) -> String {
   }
 }
 
+///|
 fn render_nodes(
   nodes : Array[Node],
   context : Context,
   partials : Map[String, String],
-  sb : StringBuilder
+  sb : StringBuilder,
 ) -> Unit raise MustacheError {
   for node in nodes {
     match node {
@@ -62,39 +65,37 @@ fn render_nodes(
           }
         } else if is_true {
           match val {
-            Array(arr) => {
+            Array(arr) =>
               for item in arr {
                 let new_context = context.push(item)
                 render_nodes(children, new_context, partials, sb)
               }
-            }
             Object(_) => {
               let new_context = context.push(val)
               render_nodes(children, new_context, partials, sb)
             }
-            _ => {
-              render_nodes(children, context, partials, sb)
-            }
+            _ => render_nodes(children, context, partials, sb)
           }
         }
       }
-      Partial(name, indent~, standalone~) => {
+      Partial(name, indent~, standalone~) =>
         match partials.get(name) {
           None => ()
           Some(partial_template) => {
             let tokens = tokenize(partial_template)
             let parser = Parser::new(tokens)
             let partial_nodes = parser.parse()
-            
+
             let partial_sb = StringBuilder::new()
             render_nodes(partial_nodes, context, partials, partial_sb)
-            
+
             let rendered_partial = partial_sb.to_string()
-            let indented_partial = apply_indent(rendered_partial, indent, standalone)
+            let indented_partial = apply_indent(
+              rendered_partial, indent, standalone,
+            )
             sb.write_string(indented_partial)
           }
         }
-      }
     }
   }
 }

@@ -1,0 +1,7 @@
+import {
+  "Lyllyl789/mustache/mustache",
+}
+
+options(
+  "is-main": true,
+)
