@@ -19,7 +19,7 @@ repository = "https://github.com/Lyllyl789/moon-mustache"
 
 license = "MIT"
 
-keywords = ["mustache", "template", "html", "wasm"]
+keywords = [ "mustache", "template", "html", "wasm" ]
 
 preferred_target = "wasm-gc"
 
