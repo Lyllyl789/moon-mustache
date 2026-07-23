@@ -1,3 +1,4 @@
+///|
 fn main {
   let template =
     #|<!DOCTYPE html>
@@ -27,7 +28,7 @@ fn main {
     #|</body>
     #|</html>
 
-  let data_str = 
+  let data_str =
     #|{
     #|  "title": "System User Report",
     #|  "users": [
@@ -44,14 +45,10 @@ fn main {
     #|    { "name": "Charlie Brown", "email": "charlie@example.com", "roles": [] }
     #|  ]
     #|}
-  
+
   let data : Json = @json.parse(data_str) catch { _ => return }
 
-  let result = @mustache.render_string(template, data) catch {
-    _ => {
-      return
-    }
-  }
+  let result = @mustache.render_string(template, data) catch { _ => return }
 
   println(result)
 }
