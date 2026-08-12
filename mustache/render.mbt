@@ -41,6 +41,8 @@ fn render_nodes(
   context : Context,
   partials : Map[String, String],
   sb : StringBuilder,
+  options : RenderOptions,
+  partial_depth : Int,
 ) -> Unit raise MustacheError {
   for node in nodes {
     match node {
@@ -61,33 +63,55 @@ fn render_nodes(
         let is_true = is_truthy(val)
         if inverted {
           if !is_true {
-            render_nodes(children, context, partials, sb)
+            render_nodes(
+              children, context, partials, sb, options, partial_depth,
+            )
           }
         } else if is_true {
           match val {
             Array(arr) =>
               for item in arr {
                 let new_context = context.push(item)
-                render_nodes(children, new_context, partials, sb)
+                render_nodes(
+                  children, new_context, partials, sb, options, partial_depth,
+                )
               }
             Object(_) => {
               let new_context = context.push(val)
-              render_nodes(children, new_context, partials, sb)
+              render_nodes(
+                children, new_context, partials, sb, options, partial_depth,
+              )
             }
-            _ => render_nodes(children, context, partials, sb)
+            _ =>
+              render_nodes(
+                children, context, partials, sb, options, partial_depth,
+              )
           }
         }
       }
       Partial(name, indent~, standalone~) =>
         match partials.get(name) {
-          None => ()
+          None =>
+            if options.missing_partial_is_error {
+              raise RenderError("Missing partial: \{name}")
+            }
           Some(partial_template) => {
+            if partial_depth >= options.max_partial_depth {
+              raise RenderError("Partial recursion depth exceeded for: \{name}")
+            }
             let tokens = tokenize(partial_template)
             let parser = Parser::new(tokens)
             let partial_nodes = parser.parse()
 
             let partial_sb = StringBuilder::new()
-            render_nodes(partial_nodes, context, partials, partial_sb)
+            render_nodes(
+              partial_nodes,
+              context,
+              partials,
+              partial_sb,
+              options,
+              partial_depth + 1,
+            )
 
             let rendered_partial = partial_sb.to_string()
             let indented_partial = apply_indent(

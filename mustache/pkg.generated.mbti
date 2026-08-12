@@ -1,0 +1,59 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Lyllyl789/mustache/mustache"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn compile(String) -> Template raise MustacheError
+
+pub fn escape_html(String) -> String
+
+pub fn is_truthy(Json) -> Bool
+
+pub fn render_string(String, Json, partials? : Map[String, String]) -> String raise MustacheError
+
+pub fn render_string_with_options(String, Json, Map[String, String], RenderOptions) -> String raise MustacheError
+
+// Errors
+pub(all) suberror MustacheError {
+  ParseError(String)
+  RenderError(String)
+}
+
+// Types and methods
+pub(all) enum Context {
+  Empty
+  Frame(Json, Context)
+}
+pub fn Context::lookup(Self, String) -> Json
+pub fn Context::new(Json) -> Self
+pub fn Context::push(Self, Json) -> Self
+
+pub(all) enum Node {
+  Text(String)
+  Variable(String, escape~ : Bool)
+  Section(String, Array[Node], inverted~ : Bool)
+  Partial(String, indent~ : String, standalone~ : Bool)
+} derive(Eq, @debug.Debug)
+
+pub struct RenderOptions {
+  max_partial_depth : Int
+  missing_partial_is_error : Bool
+}
+pub fn RenderOptions::default() -> Self
+pub fn RenderOptions::new(max_partial_depth? : Int, missing_partial_is_error? : Bool) -> Self raise MustacheError
+
+pub struct Template {
+  nodes : Array[Node]
+}
+pub fn Template::render(Self, Json, partials? : Map[String, String]) -> String raise MustacheError
+pub fn Template::render_with_options(Self, Json, Map[String, String], RenderOptions) -> String raise MustacheError
+
+type Token derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

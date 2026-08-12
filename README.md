@@ -110,3 +110,86 @@ The implementation is intentionally small and modular:
 ## License
 
 This project is released under the [MIT License](LICENSE).
+
+## Production API and safety boundaries
+
+The stable entry points are `compile`, `render_string`, and
+`Template::render`. Templates are compiled into an AST once and can then be
+rendered repeatedly with different JSON contexts. Rendering is synchronous,
+deterministic, and has no filesystem, network, or process dependencies.
+
+For services that accept user-controlled templates or partials, use
+`RenderOptions` with `render_string_with_options` or
+`Template::render_with_options`:
+
+```moonbit
+let options = @mustache.RenderOptions::new(
+  max_partial_depth=32,
+  missing_partial_is_error=true,
+)
+let html = @mustache.render_string_with_options(
+  template,
+  context,
+  partials,
+  options,
+)
+```
+
+The default behavior remains compatible with Mustache: a missing partial is
+rendered as an empty string. The explicit options API adds two operational
+guards: a bounded partial recursion depth to prevent accidental infinite
+expansion, and strict missing-partial errors for deployments that require
+complete template bundles. Invalid limits are rejected before rendering.
+
+## Behavior and boundary matrix
+
+| Area | Supported behavior | Boundary covered by tests |
+| --- | --- | --- |
+| Lookup | names, dotted paths, `.` iterator | missing keys, nested objects, arrays |
+| Sections | truthy values, arrays, objects, inverted sections | empty arrays, false, null, nested contexts |
+| Escaping | HTML escaping and triple/ampersand raw output | `&`, `<`, `>`, quotes, apostrophes |
+| Layout | comments, standalone lines, CRLF, indented partials | inline vs standalone tags |
+| Syntax | delimiter changes and nested sections | mismatched/unclosed tags |
+| Partials | nesting, recursion, inherited context | missing partials and depth limits |
+
+The executable regression suite contains the upstream Mustache specification
+cases plus project-specific safety tests. The generated specification fixture
+is produced by `gen_specs.py`; its source, license, skipped cases, and exact
+regeneration command are documented in [TESTING.md](TESTING.md).
+
+## Reproducible verification
+
+Run from the repository root:
+
+```bash
+moon version --all
+moon update
+moon check --target all --deny-warn
+moon fmt --warn
+moon info
+moon test --target all
+moon run examples/simple
+moon run examples/partials
+moon run examples/complex_html
+```
+
+The CI workflow repeats check, format, interface, and multi-target tests on
+Linux, macOS, and Windows. JavaScript execution additionally requires
+`node` to be available on the runner.
+
+## Open-source compliance
+
+This repository contains original MoonBit implementation code under MIT. The
+Mustache regression cases are generated from the public
+[`mustache/spec`](https://github.com/mustache/spec) repository; they are test
+fixtures, not copied runtime implementation. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+for provenance, regeneration, and redistribution notes. No private code,
+credentials, generated vendored dependency, or runtime service is required.
+
+## Release checklist
+
+Before publishing a version, verify that the default branch contains the same
+README, license, CI workflow, generated interface files, examples, and tests;
+then run the commands above and publish the exact `moon.mod` version to
+mooncakes.io. The repository remotes are intentionally not modified or pushed
+by local validation.

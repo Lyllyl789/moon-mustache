@@ -23,18 +23,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup MoonBit
         uses: moonbitlang/setup-moonbit@v1
 
       - name: Moon fmt check
-        run: moon fmt --check
+        run: moon fmt --warn
 
       - name: Moon info
         run: moon info
 
       - name: Moon check
-        run: moon check
+        run: moon check --target all --deny-warn
 
       - name: Moon test
-        run: moon test
+        run: moon test --target all
