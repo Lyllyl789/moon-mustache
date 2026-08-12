@@ -27,7 +27,10 @@ jobs:
           persist-credentials: false
 
       - name: Setup MoonBit
-        uses: moonbitlang/setup-moonbit@v1
+        uses: hustcer/setup-moonbit@v1
+        with:
+          version: 0.10.3+16975d007
+          core-version: 0.10.3+16975d007
 
       - name: Moon fmt check
         run: moon fmt --warn
