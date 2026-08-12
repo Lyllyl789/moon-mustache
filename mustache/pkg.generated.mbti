@@ -12,9 +12,17 @@ pub fn escape_html(String) -> String
 
 pub fn is_truthy(Json) -> Bool
 
+pub fn normalize_source(String) -> String
+
+pub fn render_batch(Array[String], Array[Json], partials? : Map[String, String], options? : RenderOptions) -> BatchReport
+
 pub fn render_string(String, Json, partials? : Map[String, String]) -> String raise MustacheError
 
 pub fn render_string_with_options(String, Json, Map[String, String], RenderOptions) -> String raise MustacheError
+
+pub fn strip_bom(String) -> String
+
+pub fn validate_string(String, partials? : Map[String, String], strict_partials? : Bool, max_depth? : Int) -> ValidationReport raise MustacheError
 
 // Errors
 pub(all) suberror MustacheError {
@@ -23,10 +31,97 @@ pub(all) suberror MustacheError {
 }
 
 // Types and methods
+pub struct AuditFinding {
+  code : String
+  message : String
+  severity : AuditSeverity
+  template_name : String
+  related_name : String
+}
+pub fn AuditFinding::code(Self) -> String
+pub fn AuditFinding::message(Self) -> String
+pub fn AuditFinding::related_name(Self) -> String
+pub fn AuditFinding::severity(Self) -> AuditSeverity
+pub fn AuditFinding::template_name(Self) -> String
+
+pub struct AuditPolicy {
+  max_nodes : Int
+  max_depth : Int
+  max_text_chars : Int
+  max_partials : Int
+  require_partials : Bool
+  require_variables : Bool
+  reject_duplicate_partials : Bool
+}
+pub fn AuditPolicy::max_depth(Self) -> Int
+pub fn AuditPolicy::max_nodes(Self) -> Int
+pub fn AuditPolicy::max_partials(Self) -> Int
+pub fn AuditPolicy::max_text_chars(Self) -> Int
+pub fn AuditPolicy::new(max_nodes? : Int, max_depth? : Int, max_text_chars? : Int, max_partials? : Int, require_partials? : Bool, require_variables? : Bool, reject_duplicate_partials? : Bool) -> Self raise MustacheError
+pub fn AuditPolicy::reject_duplicate_partials(Self) -> Bool
+pub fn AuditPolicy::require_partials(Self) -> Bool
+pub fn AuditPolicy::require_variables(Self) -> Bool
+pub fn AuditPolicy::strict() -> Self
+
+pub struct AuditReport {
+  findings : Array[AuditFinding]
+  templates_checked : Int
+  nodes_checked : Int
+  partials_checked : Int
+}
+pub fn AuditReport::error_count(Self) -> Int
+pub fn AuditReport::findings(Self) -> Array[AuditFinding]
+pub fn AuditReport::is_release_ready(Self) -> Bool
+pub fn AuditReport::nodes_checked(Self) -> Int
+pub fn AuditReport::partials_checked(Self) -> Int
+pub fn AuditReport::summary(Self) -> String
+pub fn AuditReport::templates_checked(Self) -> Int
+pub fn AuditReport::warning_count(Self) -> Int
+
+pub(all) enum AuditSeverity {
+  AuditError
+  AuditWarning
+  AuditInfo
+} derive(Eq)
+
+pub(all) enum BatchItem {
+  Rendered(String)
+  Failed(String)
+} derive(Eq, @debug.Debug)
+
+pub struct BatchReport {
+  items : Array[BatchItem]
+  succeeded : Int
+  failed : Int
+  output_chars : Int
+}
+pub fn BatchReport::failed(Self) -> Int
+pub fn BatchReport::failure_messages(Self) -> Array[String]
+pub fn BatchReport::is_success(Self) -> Bool
+pub fn BatchReport::items(Self) -> Array[BatchItem]
+pub fn BatchReport::output_chars(Self) -> Int
+pub fn BatchReport::succeeded(Self) -> Int
+pub fn BatchReport::successful_outputs(Self) -> Array[String]
+pub fn BatchReport::summary(Self) -> String
+
+pub struct CacheStats {
+  hits : Int
+  misses : Int
+  inserts : Int
+  evictions : Int
+  invalidations : Int
+}
+pub fn CacheStats::evictions(Self) -> Int
+pub fn CacheStats::hits(Self) -> Int
+pub fn CacheStats::inserts(Self) -> Int
+pub fn CacheStats::invalidations(Self) -> Int
+pub fn CacheStats::misses(Self) -> Int
+
 pub(all) enum Context {
   Empty
   Frame(Json, Context)
 }
+pub fn Context::depth(Self) -> Int
 pub fn Context::lookup(Self, String) -> Json
 pub fn Context::new(Json) -> Self
 pub fn Context::push(Self, Json) -> Self
@@ -38,20 +133,349 @@ pub(all) enum Node {
   Partial(String, indent~ : String, standalone~ : Bool)
 } derive(Eq, @debug.Debug)
 
+pub struct PlanDependency {
+  name : String
+  available : Bool
+  source_chars : Int
+  metrics : TemplateMetrics?
+}
+pub fn PlanDependency::available(Self) -> Bool
+pub fn PlanDependency::metrics(Self) -> TemplateMetrics?
+pub fn PlanDependency::name(Self) -> String
+pub fn PlanDependency::source_chars(Self) -> Int
+
+pub(all) enum ReferenceKind {
+  EscapedVariable
+  RawVariable
+  Section
+  InvertedSection
+  Partial
+} derive(Eq, @debug.Debug)
+
+pub struct RegistryEntry {
+  name : String
+  source : String
+  plan : TemplatePlan
+  revision : Int
+  enabled : Bool
+  tags : Array[String]
+}
+pub fn RegistryEntry::enabled(Self) -> Bool
+pub fn RegistryEntry::has_tag(Self, String) -> Bool
+pub fn RegistryEntry::is_revision(Self, Int) -> Bool
+pub fn RegistryEntry::name(Self) -> String
+pub fn RegistryEntry::plan(Self) -> TemplatePlan
+pub fn RegistryEntry::revision(Self) -> Int
+pub fn RegistryEntry::source(Self) -> String
+pub fn RegistryEntry::tags(Self) -> Array[String]
+
 pub struct RenderOptions {
   max_partial_depth : Int
   missing_partial_is_error : Bool
+  max_output_chars : Int
+  max_nodes : Int
+  max_context_depth : Int
 }
 pub fn RenderOptions::default() -> Self
-pub fn RenderOptions::new(max_partial_depth? : Int, missing_partial_is_error? : Bool) -> Self raise MustacheError
+pub fn RenderOptions::new(max_partial_depth? : Int, missing_partial_is_error? : Bool, max_output_chars? : Int, max_nodes? : Int, max_context_depth? : Int) -> Self raise MustacheError
+
+pub struct RenderStats {
+  mut nodes_visited : Int
+  mut variables_resolved : Int
+  mut missing_variables : Int
+  mut sections_entered : Int
+  mut partials_rendered : Int
+  mut output_chars : Int
+  mut max_partial_depth_seen : Int
+}
+pub fn RenderStats::max_partial_depth_seen(Self) -> Int
+pub fn RenderStats::missing_variables(Self) -> Int
+pub fn RenderStats::nodes_visited(Self) -> Int
+pub fn RenderStats::output_chars(Self) -> Int
+pub fn RenderStats::partials_rendered(Self) -> Int
+pub fn RenderStats::sections_entered(Self) -> Int
+pub fn RenderStats::variables_resolved(Self) -> Int
+
+pub struct SourcePosition {
+  offset : Int
+  line : Int
+  column : Int
+}
+pub fn SourcePosition::column(Self) -> Int
+pub fn SourcePosition::is_start(Self) -> Bool
+pub fn SourcePosition::line(Self) -> Int
+pub fn SourcePosition::offset(Self) -> Int
+pub fn SourcePosition::summary(Self) -> String
+
+pub struct SourceSpan {
+  start : SourcePosition
+  end : SourcePosition
+}
+pub fn SourceSpan::contains(Self, Int) -> Bool
+pub fn SourceSpan::end(Self) -> SourcePosition
+pub fn SourceSpan::is_empty(Self) -> Bool
+pub fn SourceSpan::length(Self) -> Int
+pub fn SourceSpan::start(Self) -> SourcePosition
+pub fn SourceSpan::summary(Self) -> String
 
 pub struct Template {
   nodes : Array[Node]
 }
+pub fn Template::analyze(Self) -> TemplateMetrics
+pub fn Template::audit(Self, partials? : Map[String, String], policy? : AuditPolicy) -> AuditReport raise MustacheError
+pub fn Template::contains_name(Self, String) -> Bool
+pub fn Template::partial_names(Self) -> Array[String]
+pub fn Template::reference_count(Self, String) -> Int
+pub fn Template::references(Self) -> Array[TemplateReference]
 pub fn Template::render(Self, Json, partials? : Map[String, String]) -> String raise MustacheError
+pub fn Template::render_audited(Self, Json, partials? : Map[String, String], policy? : AuditPolicy, options? : RenderOptions) -> String raise MustacheError
+pub fn Template::render_batch(Self, Array[Json], partials? : Map[String, String], options? : RenderOptions) -> BatchReport
 pub fn Template::render_with_options(Self, Json, Map[String, String], RenderOptions) -> String raise MustacheError
+pub fn Template::render_with_stats(Self, Json, Map[String, String], RenderOptions) -> (String, RenderStats) raise MustacheError
+pub fn Template::section_names(Self) -> Array[String]
+pub fn Template::validate(Self, partials? : Map[String, String], strict_partials? : Bool, max_depth? : Int) -> ValidationReport raise MustacheError
+pub fn Template::variable_names(Self) -> Array[String]
+
+pub struct TemplateBundle {
+  templates : Map[String, Template]
+  sources : Map[String, String]
+  mut partials : Map[String, String]
+}
+pub fn TemplateBundle::add_partial(Self, String, String) -> Unit
+pub fn TemplateBundle::add_template(Self, String, String) -> Unit raise MustacheError
+pub fn TemplateBundle::audit(Self, policy? : AuditPolicy) -> AuditReport raise MustacheError
+pub fn TemplateBundle::has_partial(Self, String) -> Bool
+pub fn TemplateBundle::has_template(Self, String) -> Bool
+pub fn TemplateBundle::metrics(Self, String) -> TemplateMetrics?
+pub fn TemplateBundle::new(partials? : Map[String, String]) -> Self
+pub fn TemplateBundle::partial_names(Self) -> Array[String]
+pub fn TemplateBundle::partials(Self) -> Map[String, String]
+pub fn TemplateBundle::remove_partial(Self, String) -> Bool
+pub fn TemplateBundle::remove_template(Self, String) -> Bool
+pub fn TemplateBundle::render(Self, String, Json, options? : RenderOptions) -> String raise MustacheError
+pub fn TemplateBundle::render_with_stats(Self, String, Json, options? : RenderOptions) -> (String, RenderStats) raise MustacheError
+pub fn TemplateBundle::replace_partials(Self, Map[String, String]) -> Unit
+pub fn TemplateBundle::source_lengths(Self) -> Map[String, Int]
+pub fn TemplateBundle::sources(Self) -> Map[String, String]
+pub fn TemplateBundle::template_names(Self) -> Array[String]
+pub fn TemplateBundle::validate(Self, strict_partials? : Bool, max_depth? : Int) -> ValidationReport raise MustacheError
+
+pub struct TemplateCache {
+  capacity : Int
+  mut entries : Map[String, Template]
+  mut order : Array[String]
+  mut hits : Int
+  mut misses : Int
+  mut inserts : Int
+  mut evictions : Int
+  mut invalidations : Int
+}
+pub fn TemplateCache::capacity(Self) -> Int
+pub fn TemplateCache::clear(Self) -> Unit
+pub fn TemplateCache::get(Self, String) -> Template?
+pub fn TemplateCache::get_or_compile(Self, String, String) -> Template raise MustacheError
+pub fn TemplateCache::invalidate(Self, String) -> Bool
+pub fn TemplateCache::keys(Self) -> Array[String]
+pub fn TemplateCache::len(Self) -> Int
+pub fn TemplateCache::new(Int) -> Self raise MustacheError
+pub fn TemplateCache::put(Self, String, Template) -> Unit
+pub fn TemplateCache::render(Self, String, String, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplateCache::stats(Self) -> CacheStats
+
+pub struct TemplateCatalog {
+  revisions : Map[String, TemplateRevision]
+  mut aliases : Map[String, String]
+  mut next_version : Int
+}
+pub fn TemplateCatalog::aliases(Self) -> Map[String, String]
+pub fn TemplateCatalog::contains(Self, String) -> Bool
+pub fn TemplateCatalog::find_by_tag(Self, String) -> Array[TemplateRevision]
+pub fn TemplateCatalog::get(Self, String) -> TemplateRevision?
+pub fn TemplateCatalog::latest_version(Self) -> Int
+pub fn TemplateCatalog::names(Self) -> Array[String]
+pub fn TemplateCatalog::new() -> Self
+pub fn TemplateCatalog::publish(Self, String, String, String, tags? : Array[String]) -> TemplateRevision raise MustacheError
+pub fn TemplateCatalog::remove(Self, String) -> Bool
+pub fn TemplateCatalog::render(Self, String, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplateCatalog::set_alias(Self, String, String) -> Bool
+pub fn TemplateCatalog::summary(Self) -> String
+
+pub struct TemplateMetrics {
+  mut text_chars : Int
+  mut node_count : Int
+  mut variable_count : Int
+  mut section_count : Int
+  mut partial_count : Int
+  mut max_depth : Int
+  mut unique_reference_count : Int
+}
+pub fn TemplateMetrics::max_depth(Self) -> Int
+pub fn TemplateMetrics::node_count(Self) -> Int
+pub fn TemplateMetrics::partial_count(Self) -> Int
+pub fn TemplateMetrics::section_count(Self) -> Int
+pub fn TemplateMetrics::text_chars(Self) -> Int
+pub fn TemplateMetrics::unique_reference_count(Self) -> Int
+pub fn TemplateMetrics::variable_count(Self) -> Int
+
+pub struct TemplatePlan {
+  source : TemplateSource
+  template : Template
+  query : TemplateQuery
+}
+pub fn TemplatePlan::cache_key(Self, String) -> String
+pub fn TemplatePlan::compile(String) -> Self raise MustacheError
+pub fn TemplatePlan::compile_normalized(String) -> Self raise MustacheError
+pub fn TemplatePlan::control_names(Self) -> Array[String]
+pub fn TemplatePlan::dependencies(Self, Map[String, String]) -> Array[PlanDependency] raise MustacheError
+pub fn TemplatePlan::dependency_summary(Self) -> String
+pub fn TemplatePlan::excerpt(Self, Int, radius? : Int) -> String
+pub fn TemplatePlan::is_blank(Self) -> Bool
+pub fn TemplatePlan::metrics(Self) -> TemplateMetrics
+pub fn TemplatePlan::missing_partials(Self, Map[String, String]) -> Array[String]
+pub fn TemplatePlan::partial_names(Self) -> Array[String]
+pub fn TemplatePlan::position(Self, Int) -> SourcePosition
+pub fn TemplatePlan::query(Self) -> TemplateQuery
+pub fn TemplatePlan::render(Self, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplatePlan::render_checked(Self, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplatePlan::render_with_stats(Self, Json, partials? : Map[String, String], options? : RenderOptions) -> (String, RenderStats) raise MustacheError
+pub fn TemplatePlan::required_variables(Self) -> Array[String]
+pub fn TemplatePlan::requires_partial(Self, String) -> Bool
+pub fn TemplatePlan::source(Self) -> TemplateSource
+pub fn TemplatePlan::summary(Self) -> String
+pub fn TemplatePlan::template(Self) -> Template
+pub fn TemplatePlan::validate(Self, partials? : Map[String, String], strict_partials? : Bool, max_depth? : Int) -> ValidationReport raise MustacheError
+
+pub struct TemplateQuery {
+  template : Template
+  references : Array[TemplateReference]
+  metrics : TemplateMetrics
+}
+pub fn TemplateQuery::control_names(Self) -> Array[String]
+pub fn TemplateQuery::dependency_summary(Self) -> String
+pub fn TemplateQuery::find(Self, String) -> Array[TemplateReference]
+pub fn TemplateQuery::is_dynamic(Self) -> Bool
+pub fn TemplateQuery::is_empty(Self) -> Bool
+pub fn TemplateQuery::metrics(Self) -> TemplateMetrics
+pub fn TemplateQuery::name_depth(Self, String) -> Int
+pub fn TemplateQuery::new(Template) -> Self
+pub fn TemplateQuery::references(Self) -> Array[TemplateReference]
+pub fn TemplateQuery::references_at_depth(Self, Int) -> Array[TemplateReference]
+pub fn TemplateQuery::references_of_kind(Self, ReferenceKind) -> Array[TemplateReference]
+pub fn TemplateQuery::required_variables(Self) -> Array[String]
+pub fn TemplateQuery::template(Self) -> Template
+pub fn TemplateQuery::uses_kind(Self, ReferenceKind) -> Bool
+
+pub struct TemplateReference {
+  name : String
+  kind : ReferenceKind
+  mut depth : Int
+  mut occurrences : Int
+}
+pub fn TemplateReference::depth(Self) -> Int
+pub fn TemplateReference::kind(Self) -> ReferenceKind
+pub fn TemplateReference::name(Self) -> String
+pub fn TemplateReference::occurrences(Self) -> Int
+
+pub struct TemplateRegistry {
+  entries : Map[String, RegistryEntry]
+  mut order : Array[String]
+  mut next_revision : Int
+}
+pub fn TemplateRegistry::audit(Self, partials? : Map[String, String], policy? : AuditPolicy) -> AuditReport raise MustacheError
+pub fn TemplateRegistry::contains(Self, String) -> Bool
+pub fn TemplateRegistry::disabled_names(Self) -> Array[String]
+pub fn TemplateRegistry::enabled_by_tag(Self, String) -> Array[String]
+pub fn TemplateRegistry::find_by_tag(Self, String) -> Array[String]
+pub fn TemplateRegistry::get(Self, String) -> RegistryEntry?
+pub fn TemplateRegistry::is_empty(Self) -> Bool
+pub fn TemplateRegistry::is_enabled(Self, String) -> Bool
+pub fn TemplateRegistry::latest(Self) -> RegistryEntry?
+pub fn TemplateRegistry::latest_revision(Self) -> Int
+pub fn TemplateRegistry::len(Self) -> Int
+pub fn TemplateRegistry::names(Self) -> Array[String]
+pub fn TemplateRegistry::new() -> Self
+pub fn TemplateRegistry::register(Self, String, String, tags? : Array[String]) -> RegistryEntry raise MustacheError
+pub fn TemplateRegistry::register_normalized(Self, String, String, tags? : Array[String]) -> RegistryEntry raise MustacheError
+pub fn TemplateRegistry::remove(Self, String) -> Bool
+pub fn TemplateRegistry::render(Self, String, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplateRegistry::render_checked(Self, String, Json, partials? : Map[String, String], options? : RenderOptions) -> String raise MustacheError
+pub fn TemplateRegistry::render_many(Self, Array[String], Json, partials? : Map[String, String], options? : RenderOptions) -> BatchReport
+pub fn TemplateRegistry::revision_of(Self, String) -> Int?
+pub fn TemplateRegistry::set_enabled(Self, String, Bool) -> Bool
+pub fn TemplateRegistry::source_lengths(Self) -> Map[String, Int]
+pub fn TemplateRegistry::source_of(Self, String) -> String?
+pub fn TemplateRegistry::summary(Self) -> String
+pub fn TemplateRegistry::tagged_entries(Self, String) -> Array[RegistryEntry]
+
+pub struct TemplateRevision {
+  name : String
+  version : Int
+  source : String
+  template : Template
+  tags : Array[String]
+}
+pub fn TemplateRevision::name(Self) -> String
+pub fn TemplateRevision::source(Self) -> String
+pub fn TemplateRevision::tags(Self) -> Array[String]
+pub fn TemplateRevision::template(Self) -> Template
+pub fn TemplateRevision::version(Self) -> Int
+
+pub struct TemplateSource {
+  text : String
+  line_starts : Array[Int]
+}
+pub fn TemplateSource::cache_key(Self, String) -> String
+pub fn TemplateSource::char_count(Self) -> Int
+pub fn TemplateSource::contains(Self, String) -> Bool
+pub fn TemplateSource::excerpt(Self, Int, radius? : Int) -> String
+pub fn TemplateSource::fingerprint(Self) -> String
+pub fn TemplateSource::line_at(Self, Int) -> Int
+pub fn TemplateSource::line_count(Self) -> Int
+pub fn TemplateSource::line_end(Self, Int) -> Int?
+pub fn TemplateSource::line_is_blank(Self, Int) -> Bool
+pub fn TemplateSource::line_span(Self, Int) -> SourceSpan?
+pub fn TemplateSource::line_start(Self, Int) -> Int?
+pub fn TemplateSource::line_text(Self, Int) -> String?
+pub fn TemplateSource::location_label(Self, Int) -> String
+pub fn TemplateSource::new(String) -> Self
+pub fn TemplateSource::normalized(String) -> Self
+pub fn TemplateSource::position(Self, Int) -> SourcePosition
+pub fn TemplateSource::range_text(Self, Int, Int) -> String
+pub fn TemplateSource::span(Self, Int, Int) -> SourceSpan
+pub fn TemplateSource::text(Self) -> String
 
 type Token derive(Eq, @debug.Debug)
+
+pub struct ValidationIssue {
+  code : String
+  message : String
+  severity : ValidationSeverity
+  template_name : String
+  depth : Int
+}
+pub fn ValidationIssue::code(Self) -> String
+pub fn ValidationIssue::depth(Self) -> Int
+pub fn ValidationIssue::message(Self) -> String
+pub fn ValidationIssue::severity(Self) -> ValidationSeverity
+pub fn ValidationIssue::template_name(Self) -> String
+
+pub struct ValidationReport {
+  issues : Array[ValidationIssue]
+  templates_checked : Int
+  references_checked : Int
+}
+pub fn ValidationReport::error_count(Self) -> Int
+pub fn ValidationReport::has_errors(Self) -> Bool
+pub fn ValidationReport::issues(Self) -> Array[ValidationIssue]
+pub fn ValidationReport::references_checked(Self) -> Int
+pub fn ValidationReport::summary(Self) -> String
+pub fn ValidationReport::templates_checked(Self) -> Int
+pub fn ValidationReport::warning_count(Self) -> Int
+
+pub(all) enum ValidationSeverity {
+  Error
+  Warning
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

@@ -43,28 +43,40 @@ fn render_nodes(
   sb : StringBuilder,
   options : RenderOptions,
   partial_depth : Int,
+  stats : RenderStats,
 ) -> Unit raise MustacheError {
+  if context.depth() > options.max_context_depth {
+    raise RenderError("render context depth limit exceeded")
+  }
   for node in nodes {
+    stats.nodes_visited += 1
+    if stats.nodes_visited > options.max_nodes {
+      raise RenderError("render node limit exceeded")
+    }
     match node {
-      Text(text) => sb.write_string(text)
+      Text(text) => append_output(sb, stats, options, text)
       Variable(name, escape~) => {
         let val = context.lookup(name)
         if val != null {
+          stats.variables_resolved += 1
           let s = json_to_string(val)
           if escape {
-            sb.write_string(escape_html(s))
+            append_output(sb, stats, options, escape_html(s))
           } else {
-            sb.write_string(s)
+            append_output(sb, stats, options, s)
           }
+        } else {
+          stats.missing_variables += 1
         }
       }
       Section(name, children, inverted~) => {
+        stats.sections_entered += 1
         let val = context.lookup(name)
         let is_true = is_truthy(val)
         if inverted {
           if !is_true {
             render_nodes(
-              children, context, partials, sb, options, partial_depth,
+              children, context, partials, sb, options, partial_depth, stats,
             )
           }
         } else if is_true {
@@ -73,18 +85,18 @@ fn render_nodes(
               for item in arr {
                 let new_context = context.push(item)
                 render_nodes(
-                  children, new_context, partials, sb, options, partial_depth,
+                  children, new_context, partials, sb, options, partial_depth, stats,
                 )
               }
             Object(_) => {
               let new_context = context.push(val)
               render_nodes(
-                children, new_context, partials, sb, options, partial_depth,
+                children, new_context, partials, sb, options, partial_depth, stats,
               )
             }
             _ =>
               render_nodes(
-                children, context, partials, sb, options, partial_depth,
+                children, context, partials, sb, options, partial_depth, stats,
               )
           }
         }
@@ -99,6 +111,10 @@ fn render_nodes(
             if partial_depth >= options.max_partial_depth {
               raise RenderError("Partial recursion depth exceeded for: \{name}")
             }
+            stats.partials_rendered += 1
+            if partial_depth + 1 > stats.max_partial_depth_seen {
+              stats.max_partial_depth_seen = partial_depth + 1
+            }
             let tokens = tokenize(partial_template)
             let parser = Parser::new(tokens)
             let partial_nodes = parser.parse()
@@ -111,15 +127,31 @@ fn render_nodes(
               partial_sb,
               options,
               partial_depth + 1,
+              stats,
             )
 
             let rendered_partial = partial_sb.to_string()
             let indented_partial = apply_indent(
               rendered_partial, indent, standalone,
             )
-            sb.write_string(indented_partial)
+            append_output(sb, stats, options, indented_partial)
           }
         }
     }
   }
+}
+
+///|
+fn append_output(
+  sb : StringBuilder,
+  stats : RenderStats,
+  options : RenderOptions,
+  text : String,
+) -> Unit raise MustacheError {
+  let next_size = stats.output_chars + text.length()
+  if next_size > options.max_output_chars {
+    raise RenderError("render output limit exceeded")
+  }
+  stats.output_chars = next_size
+  sb.write_string(text)
 }

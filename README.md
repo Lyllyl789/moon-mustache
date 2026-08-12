@@ -136,10 +136,61 @@ let html = @mustache.render_string_with_options(
 ```
 
 The default behavior remains compatible with Mustache: a missing partial is
-rendered as an empty string. The explicit options API adds two operational
-guards: a bounded partial recursion depth to prevent accidental infinite
-expansion, and strict missing-partial errors for deployments that require
+rendered as an empty string. The explicit options API adds operational
+guards: bounded partial recursion depth to prevent accidental infinite
+expansion and strict missing-partial errors for deployments that require
 complete template bundles. Invalid limits are rejected before rendering.
+
+## Production tooling API
+
+The runtime includes deployment-oriented APIs in addition to one-shot
+rendering:
+
+- `Template::render_with_stats` returns output together with visited-node,
+  resolved-variable, missing-variable, section, partial, output-size, and
+  recursion counters.
+- `Template::analyze`, `Template::references`, and `TemplateQuery` expose static
+  complexity, required variables, control-flow names, and partial dependencies
+  without rendering user data.
+- `Template::validate` and `validate_string` check empty references, maximum
+  nesting, and the complete partial graph. Strict mode is suitable for a
+  release gate; permissive mode reports optional partials as warnings.
+- `TemplateCache` provides bounded compiled-template reuse with hit, miss,
+  insertion, eviction, and invalidation counters.
+- `render_batch` and `Template::render_batch` render independent records while
+  preserving order and returning per-item failures rather than aborting a
+  whole import job.
+- `TemplateBundle` manages named templates and shared partials. `TemplatePlan`
+  combines compiled code, source locations, cache keys, dependency metadata,
+  validation, and checked rendering for build pipelines.
+- `TemplateCatalog` publishes numbered revisions, tags them, and moves aliases
+  such as `stable` without mutating an existing revision.
+- `TemplateRegistry` supports atomic name replacement, revisions, enable/disable
+  rollout, tag queries, source inspection, batch rendering, and release audits
+  for long-running services.
+
+Example of a release-gated render:
+
+```moonbit
+let plan = @mustache.TemplatePlan::compile("Hello {{>card}} {{name}}")
+let partials : Map[String, String] = { "card": "<b>{{name}}</b>" }
+let options = @mustache.RenderOptions::new(
+  max_output_chars=100000,
+  max_nodes=10000,
+  max_context_depth=32,
+  missing_partial_is_error=true,
+)
+let output = plan.render_checked(
+  { "name": "MoonBit" },
+  partials~,
+  options~,
+)
+```
+
+For editor or service diagnostics, `TemplateSource::normalized` handles BOM,
+LF, CRLF, and CR input, then maps offsets to one-based line and column
+locations. `TemplateSource::fingerprint` gives a deterministic source key for
+application-level caches.
 
 ## Behavior and boundary matrix
 
@@ -151,11 +202,21 @@ complete template bundles. Invalid limits are rejected before rendering.
 | Layout | comments, standalone lines, CRLF, indented partials | inline vs standalone tags |
 | Syntax | delimiter changes and nested sections | mismatched/unclosed tags |
 | Partials | nesting, recursion, inherited context | missing partials and depth limits |
+| Safety limits | output, AST nodes, context frames | deterministic limit errors |
+| Tooling | metrics, validation, cache, batch, bundle, catalog | dependency graph checks |
+| Diagnostics | source normalization and locations | BOM, CRLF/CR, clamped offsets |
 
 The executable regression suite contains the upstream Mustache specification
 cases plus project-specific safety tests. The generated specification fixture
 is produced by `gen_specs.py`; its source, license, skipped cases, and exact
 regeneration command are documented in [TESTING.md](TESTING.md).
+
+The core runtime currently contains more than 3000 lines of effective
+non-test MoonBit implementation code (3046 nonblank, noncomment lines at this
+revision; 3852 production-file lines including documentation comments). The
+count includes parser/rendering code and the production tooling APIs above; it
+does not count specification fixtures, tests, generated interfaces, or
+unrelated workspace folders.
 
 ## Reproducible verification
 

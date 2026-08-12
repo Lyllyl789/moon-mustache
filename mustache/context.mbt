@@ -15,6 +15,15 @@ pub fn Context::push(self : Context, val : Json) -> Context {
 }
 
 ///|
+/// Return the number of frames currently visible to a render.
+pub fn Context::depth(self : Context) -> Int {
+  match self {
+    Empty => 0
+    Frame(_, parent) => 1 + parent.depth()
+  }
+}
+
+///|
 fn has_dot(s : String) -> Bool {
   let len = s.length()
   let mut i = 0

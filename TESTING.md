@@ -8,12 +8,18 @@
    regression suite.
 3. `mustache/options_test.mbt` covers strict partial handling, invalid limits,
    and recursive partial protection.
-4. `examples/*` are runnable integration fixtures and provide human-readable
+4. `mustache/production_test.mbt` covers stats, output/context/node limits,
+   analysis, validation, cache eviction, batch mismatch handling, bundles,
+   catalogs, source locations, checked plans, and registry rollout behavior.
+5. `examples/*` are runnable integration fixtures and provide human-readable
    output for demos.
 
-The local baseline on MoonBit 0.10.3 is 145 passing tests for the WASM-GC
+The local baseline on MoonBit 0.10.3 is 155 passing tests for the WASM-GC
 target. The full CI matrix runs all targets supported by the installed
-toolchain.
+toolchain. The implementation line-count audit excludes `*_test.mbt`, the
+generated `pkg.generated.mbti` interface, and unrelated workspace folders; the
+current core runtime audit is 3046 effective lines (3852 including
+documentation comments).
 
 ## Re-generating the specification fixture
 
