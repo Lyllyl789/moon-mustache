@@ -18,7 +18,7 @@ The local baseline on MoonBit 0.10.3 is 155 passing tests for the WASM-GC
 target. The full CI matrix runs all targets supported by the installed
 toolchain. The implementation line-count audit excludes `*_test.mbt`, the
 generated `pkg.generated.mbti` interface, and unrelated workspace folders; the
-current core runtime audit is 3046 effective lines (3852 including
+current core runtime audit is 3493 effective lines (4350 including
 documentation comments).
 
 ## Re-generating the specification fixture

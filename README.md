@@ -212,8 +212,8 @@ is produced by `gen_specs.py`; its source, license, skipped cases, and exact
 regeneration command are documented in [TESTING.md](TESTING.md).
 
 The core runtime currently contains more than 3000 lines of effective
-non-test MoonBit implementation code (3046 nonblank, noncomment lines at this
-revision; 3852 production-file lines including documentation comments). The
+non-test MoonBit implementation code (3493 nonblank, noncomment lines at this
+revision; 4350 production-file lines including documentation comments). The
 count includes parser/rendering code and the production tooling APIs above; it
 does not count specification fixtures, tests, generated interfaces, or
 unrelated workspace folders.
