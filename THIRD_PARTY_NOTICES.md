@@ -8,7 +8,9 @@ fixtures are used only as behavioral regression data; the runtime lexer,
 parser, AST, context resolver, and renderer in this repository are original
 MoonBit implementation code.
 
-The fixture source and its license metadata remain with the upstream project.
+The upstream `mustache/spec` repository is MIT-licensed; see its
+[LICENSE](https://github.com/mustache/spec/blob/master/LICENSE). The fixture
+source and its license metadata remain with the upstream project.
 To refresh the local copy, run `python gen_specs.py` and review the generated
 diff. The generator's explicit skip list documents behavior not claimed by
 this release.

@@ -89,7 +89,7 @@ every push and pull request.
 
 ## Development Notes
 
-The implementation is intentionally small and modular:
+The implementation is modular and layered:
 
 - `lexer.mbt` converts Mustache syntax into tokens
 - `parser.mbt` turns tokens into an AST
@@ -212,8 +212,8 @@ is produced by `gen_specs.py`; its source, license, skipped cases, and exact
 regeneration command are documented in [TESTING.md](TESTING.md).
 
 The core runtime currently contains more than 3000 lines of effective
-non-test MoonBit implementation code (3493 nonblank, noncomment lines at this
-revision; 4350 production-file lines including documentation comments). The
+non-test MoonBit implementation code (3061 nonblank, noncomment lines at this
+revision; 3867 production-file lines including documentation comments). The
 count includes parser/rendering code and the production tooling APIs above; it
 does not count specification fixtures, tests, generated interfaces, or
 unrelated workspace folders.
