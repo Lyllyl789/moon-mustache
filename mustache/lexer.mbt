@@ -156,8 +156,6 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
   let char_gt = (62).to_uint16()
   let char_eq = (61).to_uint16()
   let char_amp = (38).to_uint16()
-  let char_space = (32).to_uint16()
-  let char_tab = (9).to_uint16()
 
   while pos < len {
     let next_open = find_substring(template, open_delim, pos)
@@ -249,11 +247,9 @@ fn tokenize(template : String) -> Array[Token] raise MustacheError {
         indent = template[pre_text_end:next_open].to_owned()
         tokens.push(TPartial(name, indent~, standalone=true))
       } else {
-        let mut p = next_open - 1
-        while p >= 0 && (template[p] == char_space || template[p] == char_tab) {
-          p = p - 1
-        }
-        indent = template[p + 1:next_open].to_owned()
+        // Inline partials preserve surrounding text exactly. Indentation is
+        // applied only when the partial occupies a standalone line.
+        indent = ""
         tokens.push(TPartial(name, indent~, standalone=false))
       }
     } else if first_char == char_eq {

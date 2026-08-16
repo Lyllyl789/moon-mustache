@@ -1,4 +1,12 @@
 ///|
+test "escaped rendering preserves non-BMP Unicode" {
+  let result = render_string("{{value}}", { "value": "\u{1F600} &" }) catch {
+    _ => fail("non-BMP text should render without a surrogate crash")
+  }
+  inspect(result, content="\u{1F600} &amp;")
+}
+
+///|
 test "render stats report useful operational counters" {
   let template = compile("Hello {{name}} {{missing}}") catch {
     _ => fail("template should compile")

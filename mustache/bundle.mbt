@@ -181,7 +181,7 @@ pub fn TemplateBundle::metrics(
 pub fn TemplateBundle::source_lengths(
   self : TemplateBundle,
 ) -> Map[String, Int] {
-  let lengths : Map[String, Int] = {}
+  let lengths : Map[String, Int] = Map([])
   for name, source in self.sources {
     lengths[name] = source.length()
   }

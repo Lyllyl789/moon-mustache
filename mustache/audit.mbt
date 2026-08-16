@@ -273,7 +273,7 @@ fn audit_template(
     )
   }
   let names = template.partial_names()
-  let seen : Map[String, Bool] = {}
+  let seen : Map[String, Bool] = Map([])
   for partial_name in names {
     if policy.reject_duplicate_partials() &&
       seen.get(partial_name) is Some(true) {
@@ -318,7 +318,7 @@ pub fn Template::audit(
   policy? : AuditPolicy = AuditPolicy::strict(),
 ) -> AuditReport raise MustacheError {
   let findings = []
-  let visited : Map[String, Bool] = {}
+  let visited : Map[String, Bool] = Map([])
   let templates_checked = Ref(0)
   let nodes_checked = Ref(0)
   let partials_checked = Ref(0)
@@ -341,7 +341,7 @@ pub fn TemplateBundle::audit(
   policy? : AuditPolicy = AuditPolicy::strict(),
 ) -> AuditReport raise MustacheError {
   let findings = []
-  let visited : Map[String, Bool] = {}
+  let visited : Map[String, Bool] = Map([])
   let templates_checked = Ref(0)
   let nodes_checked = Ref(0)
   let partials_checked = Ref(0)

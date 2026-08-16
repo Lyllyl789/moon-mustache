@@ -172,7 +172,7 @@ pub fn TemplateCache::invalidate(self : TemplateCache, key : String) -> Bool {
 ///|
 /// Clear every entry while preserving cumulative counters.
 pub fn TemplateCache::clear(self : TemplateCache) -> Unit {
-  self.entries = {}
+  self.entries = Map([])
   self.order = []
 }
 

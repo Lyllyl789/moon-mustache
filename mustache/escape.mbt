@@ -1,31 +1,22 @@
 ///|
 pub fn escape_html(s : String) -> String {
   let sb = StringBuilder::new()
-  let len = s.length()
-  let mut i = 0
-  let char_amp = (38).to_uint16()
-  let char_lt = (60).to_uint16()
-  let char_gt = (62).to_uint16()
-  let char_quot = (34).to_uint16()
-  let char_apos = (39).to_uint16()
-
-  while i < len {
-    let c = s[i]
-    if c == char_amp {
+  // Iterate over Unicode scalar values rather than UTF-16 code units. This
+  // keeps non-BMP characters such as emoji intact during escaped rendering.
+  for c in s {
+    if c == '&' {
       sb.write_string("&amp;")
-    } else if c == char_lt {
+    } else if c == '<' {
       sb.write_string("&lt;")
-    } else if c == char_gt {
+    } else if c == '>' {
       sb.write_string("&gt;")
-    } else if c == char_quot {
+    } else if c == '"' {
       sb.write_string("&quot;")
-    } else if c == char_apos {
+    } else if c == '\'' {
       sb.write_string("&#39;")
     } else {
-      let ch = c.to_int().to_char().unwrap()
-      sb.write_char(ch)
+      sb.write_char(c)
     }
-    i = i + 1
   }
   sb.to_string()
 }

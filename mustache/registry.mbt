@@ -393,7 +393,7 @@ pub fn TemplateRegistry::audit(
 pub fn TemplateRegistry::source_lengths(
   self : TemplateRegistry,
 ) -> Map[String, Int] {
-  let result : Map[String, Int] = {}
+  let result : Map[String, Int] = Map([])
   for name in self.order {
     match self.entries.get(name) {
       None => ()

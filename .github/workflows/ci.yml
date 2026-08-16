@@ -43,9 +43,11 @@ jobs:
       - name: moon check
         run: moon check --target all --deny-warn
 
-      # MoonBit 0.10.3 uses --warn for fmt checks; this is the strict equivalent.
-      - name: moon fmt --deny-warn
-        run: moon fmt --warn
+      - name: moon build
+        run: moon build --target all
+
+      - name: moon fmt check
+        run: moon fmt --check
 
       # MoonBit 0.10.3 does not expose --deny-warn for moon info.
       - name: moon info --deny-warn

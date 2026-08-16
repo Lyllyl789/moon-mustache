@@ -146,7 +146,7 @@ pub fn TemplateCatalog::remove(self : TemplateCatalog, name : String) -> Bool {
   let existed = self.revisions.get(key) is Some(_)
   if existed {
     self.revisions.remove(key)
-    let next_aliases : Map[String, String] = {}
+    let next_aliases : Map[String, String] = Map([])
     for alias_name, target in self.aliases {
       if target != key {
         next_aliases[alias_name] = target

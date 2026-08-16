@@ -241,7 +241,7 @@ pub fn Template::validate(
     raise RenderError("validation max_depth must be positive")
   }
   let issues = []
-  let visited : Map[String, Bool] = {}
+  let visited : Map[String, Bool] = Map([])
   let refs = Ref(0)
   let templates = Ref(0)
   validate_partials(

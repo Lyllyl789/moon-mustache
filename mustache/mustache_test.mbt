@@ -79,7 +79,7 @@ test "inverted_sections" {
 
 ///|
 test "comments" {
-  let context : Json = {}
+  let context : Json = Json::empty_object()
   let r = render_string("Hello {{! ignore me }}World", context) catch {
     _ => fail("error")
   }

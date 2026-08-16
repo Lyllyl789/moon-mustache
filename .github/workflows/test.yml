@@ -33,13 +33,16 @@ jobs:
           core-version: 0.10.3+16975d007
 
       - name: Moon fmt check
-        run: moon fmt --warn
+        run: moon fmt --check
 
       - name: Moon info
         run: moon info
 
       - name: Moon check
         run: moon check --target all --deny-warn
+
+      - name: Moon build
+        run: moon build --target all
 
       - name: Moon test
         run: moon test --target all

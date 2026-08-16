@@ -38,6 +38,12 @@ MoonBit projects.
 
 ### 1. Add the dependency
 
+From your MoonBit project root, run:
+
+```bash
+moon add Lyllyl789/mustache
+```
+
 In your MoonBit project, import the module:
 
 ```moonbit
@@ -79,7 +85,8 @@ Run these commands from the repository root:
 
 ```bash
 moon check
-moon fmt --warn
+moon build --target all
+moon fmt --check
 moon info
 moon test
 ```
@@ -198,7 +205,7 @@ application-level caches.
 | --- | --- | --- |
 | Lookup | names, dotted paths, `.` iterator | missing keys, nested objects, arrays |
 | Sections | truthy values, arrays, objects, inverted sections | empty arrays, false, null, nested contexts |
-| Escaping | HTML escaping and triple/ampersand raw output | `&`, `<`, `>`, quotes, apostrophes |
+| Escaping | HTML escaping and triple/ampersand raw output | `&`, `<`, `>`, quotes, apostrophes, non-BMP Unicode |
 | Layout | comments, standalone lines, CRLF, indented partials | inline vs standalone tags |
 | Syntax | delimiter changes and nested sections | mismatched/unclosed tags |
 | Partials | nesting, recursion, inherited context | missing partials and depth limits |
@@ -212,8 +219,8 @@ is produced by `gen_specs.py`; its source, license, skipped cases, and exact
 regeneration command are documented in [TESTING.md](TESTING.md).
 
 The core runtime currently contains more than 3000 lines of effective
-non-test MoonBit implementation code (3061 nonblank, noncomment lines at this
-revision; 3867 production-file lines including documentation comments). The
+non-test MoonBit implementation code (3051 nonblank, noncomment lines at this
+revision; 3862 production-file lines including documentation comments). The
 count includes parser/rendering code and the production tooling APIs above; it
 does not count specification fixtures, tests, generated interfaces, or
 unrelated workspace folders.
@@ -226,7 +233,8 @@ Run from the repository root:
 moon version --all
 moon update
 moon check --target all --deny-warn
-moon fmt --warn
+moon build --target all
+moon fmt --check
 moon info
 moon test --target all
 moon run examples/simple

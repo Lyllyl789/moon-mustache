@@ -1,24 +1,26 @@
 ///|
-fn apply_indent(content : String, indent : String, standalone : Bool) -> String {
-  if indent.length() == 0 {
-    return content
+fn indent_partial_source(
+  source : String,
+  indent : String,
+  standalone : Bool,
+) -> String {
+  if !standalone || indent.length() == 0 || source.length() == 0 {
+    return source
   }
   let sb = StringBuilder::new()
-  let len = content.length()
-  let mut i = 0
-  let mut at_line_start = standalone
-  let char_lf = (10).to_uint16()
-  while i < len {
-    let c = content[i]
-    if at_line_start {
+  // Prefix source lines before rendering. Newlines produced by an
+  // interpolation remain unindented, matching the Mustache specification.
+  sb.write_string(indent)
+  let mut needs_indent = false
+  for c in source {
+    if needs_indent {
       sb.write_string(indent)
-      at_line_start = false
+      needs_indent = false
     }
-    sb.write_char(c.to_int().to_char().unwrap())
-    if c == char_lf {
-      at_line_start = true
+    sb.write_char(c)
+    if c == '\n' {
+      needs_indent = true
     }
-    i = i + 1
   }
   sb.to_string()
 }
@@ -96,7 +98,13 @@ fn render_nodes(
             }
             _ =>
               render_nodes(
-                children, context, partials, sb, options, partial_depth, stats,
+                children,
+                context.push(val),
+                partials,
+                sb,
+                options,
+                partial_depth,
+                stats,
               )
           }
         }
@@ -115,7 +123,10 @@ fn render_nodes(
             if partial_depth + 1 > stats.max_partial_depth_seen {
               stats.max_partial_depth_seen = partial_depth + 1
             }
-            let tokens = tokenize(partial_template)
+            let indented_source = indent_partial_source(
+              partial_template, indent, standalone,
+            )
+            let tokens = tokenize(indented_source)
             let parser = Parser::new(tokens)
             let partial_nodes = parser.parse()
 
@@ -131,10 +142,7 @@ fn render_nodes(
             )
 
             let rendered_partial = partial_sb.to_string()
-            let indented_partial = apply_indent(
-              rendered_partial, indent, standalone,
-            )
-            append_output(sb, stats, options, indented_partial)
+            append_output(sb, stats, options, rendered_partial)
           }
         }
     }

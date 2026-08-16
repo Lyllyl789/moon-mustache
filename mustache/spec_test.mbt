@@ -704,11 +704,41 @@ test "sections.json - Parent contexts" {
 }
 
 ///|
+test "sections.json - Variable test" {
+  // Non-false sections have their value at the top of context, accessible as {{.}} or through the parent context. This gives a simple way to display content conditionally if a variable exists.
+  let template = "\"{{#foo}}{{.}} is {{foo}}{{/foo}}\""
+  let data_str = "{\"foo\": \"bar\"}"
+  let expected = "\"bar is bar\""
+  let data : Json = @json.parse(data_str) catch {
+    _ => fail("Json parse error")
+  }
+  let result = render_string(template, data) catch { _ => fail("Render error") }
+  if result != expected {
+    fail("Expected: " + expected + ", got: " + result)
+  }
+}
+
+///|
 test "sections.json - List Contexts" {
   // All elements on the context stack should be accessible within lists.
   let template = "{{#tops}}{{#middles}}{{tname.lower}}{{mname}}.{{#bottoms}}{{tname.upper}}{{mname}}{{bname}}.{{/bottoms}}{{/middles}}{{/tops}}"
   let data_str = "{\"tops\": [{\"tname\": {\"upper\": \"A\", \"lower\": \"a\"}, \"middles\": [{\"mname\": \"1\", \"bottoms\": [{\"bname\": \"x\"}, {\"bname\": \"y\"}]}]}]}"
   let expected = "a1.A1x.A1y."
+  let data : Json = @json.parse(data_str) catch {
+    _ => fail("Json parse error")
+  }
+  let result = render_string(template, data) catch { _ => fail("Render error") }
+  if result != expected {
+    fail("Expected: " + expected + ", got: " + result)
+  }
+}
+
+///|
+test "sections.json - Deeply Nested Contexts" {
+  // All elements on the context stack should be accessible.
+  let template = "{{#a}}\n{{one}}\n{{#b}}\n{{one}}{{two}}{{one}}\n{{#c}}\n{{one}}{{two}}{{three}}{{two}}{{one}}\n{{#d}}\n{{one}}{{two}}{{three}}{{four}}{{three}}{{two}}{{one}}\n{{#five}}\n{{one}}{{two}}{{three}}{{four}}{{five}}{{four}}{{three}}{{two}}{{one}}\n{{one}}{{two}}{{three}}{{four}}{{.}}6{{.}}{{four}}{{three}}{{two}}{{one}}\n{{one}}{{two}}{{three}}{{four}}{{five}}{{four}}{{three}}{{two}}{{one}}\n{{/five}}\n{{one}}{{two}}{{three}}{{four}}{{three}}{{two}}{{one}}\n{{/d}}\n{{one}}{{two}}{{three}}{{two}}{{one}}\n{{/c}}\n{{one}}{{two}}{{one}}\n{{/b}}\n{{one}}\n{{/a}}\n"
+  let data_str = "{\"a\": {\"one\": 1}, \"b\": {\"two\": 2}, \"c\": {\"three\": 3, \"d\": {\"four\": 4, \"five\": 5}}}"
+  let expected = "1\n121\n12321\n1234321\n123454321\n12345654321\n123454321\n1234321\n12321\n121\n1\n"
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
@@ -1627,7 +1657,7 @@ test "partials.json - Basic Behavior" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["text"] = "from partial"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1661,7 +1691,7 @@ test "partials.json - Context" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = "*{{text}}*"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1680,7 +1710,7 @@ test "partials.json - Recursion" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["node"] = "{{content}}<{{#nodes}}{{>node}}{{/nodes}}>"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1699,7 +1729,7 @@ test "partials.json - Nested" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["outer"] = "*{{a}} {{>inner}}*"
   partials_map["inner"] = "{{b}}!"
   let result = render_string(template, data, partials=partials_map) catch {
@@ -1719,8 +1749,27 @@ test "partials.json - Surrounding Whitespace" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = "	|	"
+  let result = render_string(template, data, partials=partials_map) catch {
+    _ => fail("Render error")
+  }
+  if result != expected {
+    fail("Expected: " + expected + ", got: " + result)
+  }
+}
+
+///|
+test "partials.json - Inline Indentation" {
+  // Whitespace should be left untouched.
+  let template = "  {{data}}  {{> partial}}\n"
+  let data_str = "{\"data\": \"|\"}"
+  let expected = "  |  >\n>\n"
+  let data : Json = @json.parse(data_str) catch {
+    _ => fail("Json parse error")
+  }
+  let partials_map : Map[String, String] = Map([])
+  partials_map["partial"] = ">\n>"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
   }
@@ -1738,7 +1787,7 @@ test "partials.json - Standalone Line Endings" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = ">"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1757,7 +1806,7 @@ test "partials.json - Standalone Without Previous Line" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = ">\n>"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1776,8 +1825,27 @@ test "partials.json - Standalone Without Newline" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = ">\n>"
+  let result = render_string(template, data, partials=partials_map) catch {
+    _ => fail("Render error")
+  }
+  if result != expected {
+    fail("Expected: " + expected + ", got: " + result)
+  }
+}
+
+///|
+test "partials.json - Standalone Indentation" {
+  // Each line of the partial should be indented before rendering.
+  let template = "\\\n {{>partial}}\n/\n"
+  let data_str = "{\"content\": \"<\\n->\"}"
+  let expected = "\\\n |\n <\n->\n |\n/\n"
+  let data : Json = @json.parse(data_str) catch {
+    _ => fail("Json parse error")
+  }
+  let partials_map : Map[String, String] = Map([])
+  partials_map["partial"] = "|\n{{{content}}}\n|\n"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
   }
@@ -1795,7 +1863,7 @@ test "partials.json - Padding Whitespace" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["partial"] = "[]"
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1874,7 +1942,7 @@ test "delimiters.json - Partial Inheritence" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["include"] = ".{{value}}."
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
@@ -1893,7 +1961,7 @@ test "delimiters.json - Post-Partial Behavior" {
   let data : Json = @json.parse(data_str) catch {
     _ => fail("Json parse error")
   }
-  let partials_map : Map[String, String] = {}
+  let partials_map : Map[String, String] = Map([])
   partials_map["include"] = ".{{value}}. {{= | | =}} .|value|."
   let result = render_string(template, data, partials=partials_map) catch {
     _ => fail("Render error")
