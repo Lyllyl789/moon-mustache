@@ -28,11 +28,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup MoonBit 0.10.3
+      - name: Setup MoonBit 0.10.7
         uses: hustcer/setup-moonbit@v1
         with:
-          version: 0.10.3+16975d007
-          core-version: 0.10.3+16975d007
+          version: 0.10.7+bc794d341
+          core-version: 0.10.7+bc794d341
 
       - name: moon version --all
         run: moon version --all
@@ -49,7 +49,7 @@ jobs:
       - name: moon fmt check
         run: moon fmt --check
 
-      # MoonBit 0.10.3 does not expose --deny-warn for moon info.
+      # MoonBit 0.10.7 does not expose --deny-warn for moon info.
       - name: moon info --deny-warn
         run: moon info
 

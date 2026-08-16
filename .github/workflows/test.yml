@@ -16,10 +16,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
-    defaults:
-      run:
-        shell: bash
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,8 +25,8 @@ jobs:
       - name: Setup MoonBit
         uses: hustcer/setup-moonbit@v1
         with:
-          version: 0.10.3+16975d007
-          core-version: 0.10.3+16975d007
+          version: 0.10.7+bc794d341
+          core-version: 0.10.7+bc794d341
 
       - name: Moon fmt check
         run: moon fmt --check

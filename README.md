@@ -10,7 +10,7 @@ MoonBit projects.
 - Project name: `moon-mustache`
 - Module name: `Lyllyl789/mustache`
 - License: MIT
-- Toolchain target: MoonBit `0.10.3`
+- Toolchain target: MoonBit `0.10.7`
 - Manifest format: current `moon.mod` / `moon.pkg`
 
 ## What It Supports

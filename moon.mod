@@ -11,7 +11,7 @@
 
 name = "Lyllyl789/mustache"
 
-version = "0.1.4"
+version = "0.1.5"
 
 readme = "README.md"
 
